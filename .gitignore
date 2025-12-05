@@ -1,0 +1,9 @@
+/vendor
+/node_modules
+/public/storage
+/storage/*.key
+.env
+.env.*
+/.idea
+/public/hot
+/public/build
