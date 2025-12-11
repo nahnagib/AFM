@@ -38,11 +38,12 @@ EXPOSE 8080
 # Start-up script handles env + key + migrations + server
 CMD /bin/sh -c " \
     if [ ! -f .env ]; then \
-        if [ -f .env.example.production ]; then \
-            cp .env.example.production .env; \
-        else \
-            cp .env.example .env; \
+        if [ ! -f .env.example.production ]; then \
+            echo 'ERROR: .env and .env.example.production not found in container.' >&2; \
+            ls -la; \
+            exit 1; \
         fi; \
+        cp .env.example.production .env; \
     fi && \
     php artisan key:generate --force && \
     php artisan migrate --force && \
