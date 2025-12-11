@@ -17,20 +17,19 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . .
 
-# Use production env template as base .env
-RUN cp .env.example.production .env
-
-# Install PHP dependencies and run Laravel post-install scripts
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
-
-# Laravel optimizations
-RUN php artisan key:generate --force \
-    && php artisan config:cache \
-    && php artisan migrate --force \
-    && php artisan db:seed --force
 
 # Expose the port Render will map
 EXPOSE 8080
 
-# Start Laravel HTTP server, using Render's PORT env if present
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-8080}
+# Start-up script handles env + migrations + server
+CMD /bin/sh -c " \
+    if [ ! -f .env ]; then \
+        cp .env.example.production .env; \
+    fi && \
+    php artisan key:generate --force && \
+    php artisan migrate --force && \
+    php artisan db:seed --force && \
+    php artisan serve --host=0.0.0.0 --port=${PORT:-8080} \
+"
