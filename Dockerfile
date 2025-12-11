@@ -38,7 +38,11 @@ EXPOSE 8080
 # Start-up script handles env + key + migrations + server
 CMD /bin/sh -c " \
     if [ ! -f .env ]; then \
-        cp .env.example.production .env; \
+        if [ -f .env.example.production ]; then \
+            cp .env.example.production .env; \
+        else \
+            cp .env.example .env; \
+        fi; \
     fi && \
     php artisan key:generate --force && \
     php artisan migrate --force && \
