@@ -25,6 +25,43 @@ WORKDIR /var/www/html
 # Copy project files
 COPY . .
 
+# Create a minimal .env file INSIDE the image
+# All sensitive values will be overridden by Render environment variables
+RUN printf '%s\n' \
+    'APP_NAME=AFM' \
+    'APP_ENV=production' \
+    'APP_KEY=' \
+    'APP_DEBUG=false' \
+    'APP_URL=' \
+    '' \
+    'LOG_CHANNEL=stack' \
+    'LOG_LEVEL=debug' \
+    '' \
+    'DB_CONNECTION=mysql' \
+    'DB_HOST=' \
+    'DB_PORT=' \
+    'DB_DATABASE=' \
+    'DB_USERNAME=' \
+    'DB_PASSWORD=' \
+    '' \
+    'SESSION_DRIVER=file' \
+    'SESSION_LIFETIME=120' \
+    'SESSION_DOMAIN=' \
+    'SESSION_SECURE_COOKIE=false' \
+    '' \
+    'CACHE_DRIVER=file' \
+    'QUEUE_CONNECTION=sync' \
+    '' \
+    'MAIL_MAILER=smtp' \
+    'MAIL_HOST=mailpit' \
+    'MAIL_PORT=1025' \
+    'MAIL_USERNAME=null' \
+    'MAIL_PASSWORD=null' \
+    'MAIL_ENCRYPTION=null' \
+    'MAIL_FROM_ADDRESS=noreply@afm.test' \
+    'MAIL_FROM_NAME="AFM System"' \
+    > .env
+
 # Install PHP dependencies (NO artisan scripts during build)
 RUN composer install \
     --no-dev \
@@ -35,16 +72,8 @@ RUN composer install \
 # Expose the port Render will map
 EXPOSE 8080
 
-# Start-up script handles env + key + migrations + server
+# Start-up script: key, migrations, seed, server
 CMD /bin/sh -c " \
-    if [ ! -f .env ]; then \
-        if [ ! -f .env.example.production ]; then \
-            echo 'ERROR: .env and .env.example.production not found in container.' >&2; \
-            ls -la; \
-            exit 1; \
-        fi; \
-        cp .env.example.production .env; \
-    fi && \
     php artisan key:generate --force && \
     php artisan migrate --force && \
     php artisan db:seed --force && \
