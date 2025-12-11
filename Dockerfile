@@ -1,12 +1,16 @@
 # Use official PHP image with required extensions
 FROM php:8.2-cli
 
-# Install system dependencies
+# Install system dependencies + libs needed for gd
 RUN apt-get update \
     && apt-get install -y \
        git unzip libzip-dev libonig-dev libpq-dev \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip \
+       libfreetype6-dev libjpeg62-turbo-dev libpng-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql zip gd \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
