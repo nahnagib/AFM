@@ -37,7 +37,7 @@ RUN printf '%s\n' \
     'LOG_CHANNEL=stack' \
     'LOG_LEVEL=debug' \
     '' \
-    'DB_CONNECTION=mysql' \
+    'DB_CONNECTION=pgsql' \
     'DB_HOST=' \
     'DB_PORT=' \
     'DB_DATABASE=' \
