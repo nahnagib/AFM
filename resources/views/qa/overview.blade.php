@@ -79,7 +79,7 @@
     @endif
 
     <!-- Quick Actions -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
         <a href="{{ route('qa.forms.index') }}" class="bg-white border border-slate-200 hover:border-blue-300 hover:shadow-md rounded-xl p-6 transition group">
             <div class="text-4xl mb-3 group-hover:scale-110 transition-transform duration-200">📝</div>
             <h3 class="text-lg font-bold text-slate-800 group-hover:text-blue-600">Manage Forms</h3>
@@ -97,6 +97,14 @@
             <h3 class="text-lg font-bold text-slate-800 group-hover:text-purple-600">Send Reminders</h3>
             <p class="text-sm text-slate-500 mt-1">Notify students with pending forms</p>
         </a>
+
+        @if(session('afm_role') === 'qa')
+            <a href="{{ route('qa.reports.responses') }}" class="bg-white border border-slate-200 hover:border-indigo-300 hover:shadow-md rounded-xl p-6 transition group">
+                <div class="text-4xl mb-3 group-hover:scale-110 transition-transform duration-200">📄</div>
+                <h3 class="text-lg font-bold text-slate-800 group-hover:text-indigo-600">Detailed Responses</h3>
+                <p class="text-sm text-slate-500 mt-1">View every student answer by course and question.</p>
+            </a>
+        @endif
     </div>
 </div>
 @endsection

@@ -2,31 +2,15 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use App\Models\SisStudent;
 use App\Models\SisCourseRef;
-use App\Models\SisEnrollment;
+use Illuminate\Database\Seeder;
 
-class SisDataSeeder extends Seeder
+class CourseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Seed Test Student (only one for testing)
-        $student = [
-            'sis_student_id' => '1',
-            'full_name' => 'Test Student',
-            'email' => 'test@student.edu',
-            'college' => 'Engineering',
-            'department' => 'Software Engineering',
-        ];
-
-        SisStudent::updateOrCreate(
-            ['sis_student_id' => $student['sis_student_id']],
-            $student
-        );
-
-        // 2. Seed 4 Test Courses
         $termCode = 'Spring 2025';
+        
         $courses = [
             [
                 'course_reg_no' => 'SE401-Spring2025',
@@ -65,20 +49,6 @@ class SisDataSeeder extends Seeder
                     'term_code' => $termCode,
                     'last_seen_at' => now(),
                 ])
-            );
-        }
-
-        // 3. Seed Enrollments (Test student enrolled in all 4 courses)
-        foreach ($courses as $course) {
-            SisEnrollment::updateOrCreate(
-                [
-                    'sis_student_id' => $student['sis_student_id'],
-                    'course_reg_no' => $course['course_reg_no'],
-                    'term_code' => $termCode,
-                ],
-                [
-                    'snapshot_at' => now(),
-                ]
             );
         }
     }

@@ -23,33 +23,50 @@ class StudentFormController extends Controller
 
     public function show(Request $request, $formId)
     {
-        $form = Form::with(['sections.questions.options'])->findOrFail($formId);
+        $form = Form::with([
+            'sections.questions.options',
+            'sections.questions.staffRole.staffMembers' => function ($query) {
+                $query->where('is_active', true)->orderBy('name_ar');
+            }
+        ])->findOrFail($formId);
 
         // Get student info from session
         $studentId = session('afm_user_id');
-        $termCode = session('afm_term_code', config('afm.current_term', '202410'));
+        $termCode = session('afm_term_code', '202510'); // Internal code for DB
         
         // Get course context from query param (for course feedback)
-        $courseRegNo = $request->query('course');
+        $courseRegNo = $request->query('course_reg_no');
 
         // Check if form is published and active
         if (!$form->is_published || !$form->is_active) {
             abort(404, 'Form not available.');
         }
 
-        // Check eligibility
-        // For course feedback: must be enrolled in the course
-        // For system services: must be in the term
-        $courses = session('afm_courses', []);
-        $requiredForms = $this->completionTracking->getRequiredFormsForStudent($studentId, $courses, $termCode);
-        
-        $isEligible = $requiredForms->contains(function ($req) use ($formId, $courseRegNo) {
-            return $req['form']->id == $formId && 
-                   ($req['course_reg_no'] === $courseRegNo || $req['course_reg_no'] === null);
-        });
+        // Check eligibility via AFM Session (JSON source of truth)
+        $role = session('afm_role');
+        $courses = collect(session('afm_courses', []));
+
+        if ($role !== 'student') {
+            abort(403, 'YOU ARE NOT ELIGIBLE TO COMPLETE THIS FORM.');
+        }
+
+        // Determine if eligible based on form code
+        $isEligible = false;
+
+        if ($form->code === 'COURSE_EVAL_DEFAULT') {
+            // Must have a valid course_reg_no that exists in the student's session courses
+            if ($courseRegNo) {
+                $isEligible = $courses->contains(function ($course) use ($courseRegNo) {
+                    return ($course['course_reg_no'] ?? null) === $courseRegNo;
+                });
+            }
+        } elseif ($form->code === 'SERVICES_EVAL_DEFAULT') {
+            // Always eligible for System/Services feedback
+            $isEligible = true;
+        }
 
         if (!$isEligible) {
-            abort(403, 'You are not eligible to complete this form.');
+            abort(403, 'YOU ARE NOT ELIGIBLE TO COMPLETE THIS FORM.');
         }
 
         // Check if already completed

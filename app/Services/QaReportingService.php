@@ -13,7 +13,8 @@ class QaReportingService extends BaseService
 {
     public function getCurrentTerm(): string
     {
-        return config('afm.current_term', '202410');
+        // Return internal term code (matches what we store in responses table)
+        return '202510'; // Spring 2025
     }
 
     /**
@@ -98,6 +99,7 @@ class QaReportingService extends BaseService
      * Examples:
      *  - "CS301_001_202410" → "CS301"
      *  - "SE401-202410"     → "SE401"
+     *  - "SE401-Spring2025" → "SE401"
      */
     private function extractCourseCode(?string $courseRegNo): ?string
     {
@@ -126,10 +128,13 @@ class QaReportingService extends BaseService
         // Basic mapping for known courses (could be moved to config or database)
         $knownCourses = [
             'CS301'  => 'Database Systems',
+            'CS302'  => 'Database Systems',
             'SE401'  => 'Software Engineering Project',
             'SE402'  => 'Quality Assurance',
             'IT201'  => 'Web Development',
             'IT202'  => 'Web Development',
+            'IT210'  => 'Computer Networks',
+            'MA201'  => 'Discrete Mathematics',
             'MATH101'=> 'Calculus I',
         ];
 
@@ -138,45 +143,33 @@ class QaReportingService extends BaseService
 
     public function getOverviewMetrics(string $termCode): array
     {
-        // 1. Total Active Students (from AFM feedback data)
-        $activeStudents = CompletionFlag::where('term_code', $termCode)
+        // 1. Eligible Students: All who reached the dashboard (from registry)
+        $eligibleStudents = \App\Models\AfmStudentRegistry::where('term_code', $termCode)
             ->distinct('sis_student_id')
-            ->pluck('sis_student_id')
-            ->merge(
-                Response::where('term_code', $termCode)
-                    ->where('status', 'submitted')
-                    ->distinct('sis_student_id')
-                    ->pluck('sis_student_id')
-            )
-            ->unique();
+            ->count('sis_student_id');
 
-        $totalStudents = $activeStudents->count();
-
-        // 2. Participation Rate (% of students who completed at least one form)
-        $participatingStudents = CompletionFlag::where('term_code', $termCode)
+        // 2. Completed Students: Count distinct students who completed at least one course evaluation
+        $completedStudents = Response::where('term_code', $termCode)
+            ->whereHas('form', fn ($q) => $q->where('code', 'COURSE_EVAL_DEFAULT'))
+            ->where('status', 'submitted')
             ->distinct('sis_student_id')
-            ->count();
+            ->count('sis_student_id');
 
-        $participationRate = $totalStudents > 0
-            ? round(($participatingStudents / $totalStudents) * 100, 1)
+        // 3. Participation Rate
+        $participationRate = $eligibleStudents > 0
+            ? round(($completedStudents / $eligibleStudents) * 100, 1)
             : 0;
 
-        // 3. Pending Evaluations
-        // Pending = students with submitted responses but no completion flags
-        $pendingEvaluations = $totalStudents - $participatingStudents;
+        // 4. Pending Evaluations
+        $pendingEvaluations = max($eligibleStudents - $completedStudents, 0);
 
-        // 4. High Risk Courses
-        $threshold = config('afm.high_risk_threshold', 0.6);
-
-        $courseStats = $this->getParticipationByCourse($termCode);
-        $highRiskCount = collect($courseStats)->filter(function ($stat) use ($threshold) {
-            return $stat['participation'] < ($threshold * 100);
-        })->count();
+        // 5. High Risk Courses (placeholder for now)
+        $highRiskCount = 0; // TODO: Implement based on average scores
 
         return [
-            'total_students'      => $totalStudents,
+            'total_students'      => $eligibleStudents,
             'participation_rate'  => $participationRate,
-            'pending_evaluations' => max(0, $pendingEvaluations), // Ensure non-negative
+            'pending_evaluations' => $pendingEvaluations,
             'high_risk_courses'   => $highRiskCount,
         ];
     }

@@ -35,6 +35,11 @@ class Question extends Model
         return $this->hasMany(ResponseItem::class);
     }
 
+    public function staffRole(): BelongsTo
+    {
+        return $this->belongsTo(StaffRole::class, 'staff_role_id');
+    }
+
     // Scopes
     public function scopeRequired($query)
     {
@@ -60,5 +65,10 @@ class Question extends Model
     public function getIsTextAttribute(): bool
     {
         return in_array($this->qtype, ['text', 'textarea']);
+    }
+
+    public function getIsStaffSelectionAttribute(): bool
+    {
+        return !is_null($this->staff_role_id);
     }
 }

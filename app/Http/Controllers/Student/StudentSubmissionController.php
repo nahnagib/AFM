@@ -54,22 +54,16 @@ class StudentSubmissionController extends Controller
         try {
             $this->responseSubmission->submitResponse($response, $answers);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Response submitted successfully.',
-                'redirect' => route('student.dashboard'),
-            ]);
+            return redirect()->route('student.dashboard')
+                ->with('success', 'تم إرسال التقييم بنجاح. شكراً لمشاركتك!');
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed.',
-                'errors' => $e->errors(),
-            ], 422);
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 400);
+            return redirect()->back()
+                ->with('error', 'حدث خطأ أثناء الإرسال: ' . $e->getMessage())
+                ->withInput();
         }
     }
 }

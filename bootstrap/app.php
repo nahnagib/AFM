@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'afm.auth' => \App\Http\Middleware\AfmAuthenticated::class,
             'role' => \App\Http\Middleware\RoleCheck::class,
+            'afm.student' => \App\Http\Middleware\EnsureAfmStudentRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

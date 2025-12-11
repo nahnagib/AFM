@@ -11,6 +11,7 @@ class AfmSessionToken extends Model
         'nonce',
         'payload_hash',
         'sis_student_id',
+        'student_name',
         'courses_json',
         'role',
         'issued_at',

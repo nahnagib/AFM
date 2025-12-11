@@ -18,10 +18,16 @@ class RoleMiddleware
         $role = $request->attributes->get('afm_role');
 
         if (!$role) {
+            if (app()->environment('local')) {
+                return redirect()->route('dev.simulator')->with('error', 'Authentication required. Please login via Simulator.');
+            }
             abort(401, 'Unauthenticated');
         }
 
         if (!in_array($role, $roles)) {
+            if (app()->environment('local')) {
+                return redirect()->route('dev.simulator')->with('error', 'Unauthorized access for role: ' . $role);
+            }
             abort(403, 'Unauthorized');
         }
 

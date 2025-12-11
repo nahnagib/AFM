@@ -81,15 +81,29 @@
                                           class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                           @if($question->max_length) maxlength="{{ $question->max_length }}" @endif
                                           @if($question->required) required @endif>{{ $answers[$question->id] ?? '' }}</textarea>
+                            @elseif($question->staff_role_id)
+                                <div class="space-y-2">
+                                    <select name="answers[{{ $question->id }}]" 
+                                            class="w-full border border-gray-300 rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            @if($question->required) required @endif>
+                                        <option value="">اختر {{ $question->staffRole->label_ar ?? 'الموظف' }}...</option>
+                                        @foreach($question->staffRole->staffMembers as $staff)
+                                            <option value="{{ $staff->name_ar }}" 
+                                                @if(isset($answers[$question->id]) && $answers[$question->id] == $staff->name_ar) selected @endif>
+                                                {{ $staff->name_ar }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
                             @elseif($question->qtype === 'mcq_single')
                                 <div class="space-y-2">
                                     @foreach($question->options as $option)
                                         <label class="flex items-center cursor-pointer hover:bg-gray-100 p-2 rounded">
-                                            <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option->value }}"
+                                            <input type="radio" name="answers[{{ $question->id }}]" value="{{ $option->opt_value }}"
                                                    class="ml-2"
-                                                   @if(isset($answers[$question->id]) && $answers[$question->id] == $option->value) checked @endif
+                                                   @if(isset($answers[$question->id]) && $answers[$question->id] == $option->opt_value) checked @endif
                                                    @if($question->required) required @endif>
-                                            <span>{{ $option->label }}</span>
+                                            <span>{{ $option->opt_label }}</span>
                                         </label>
                                     @endforeach
                                 </div>
@@ -170,30 +184,13 @@ function showToast(message, type) {
     setTimeout(() => toast.remove(), 3000);
 }
 
-// Submit handler
+// Submit handler - ask for confirmation before submitting
 form.addEventListener('submit', (e) => {
-    e.preventDefault();
     if(!confirm('هل أنت متأكد من إرسال التقييم؟ لن تتمكن من التعديل بعد الإرسال.')) {
-        return;
+        e.preventDefault();
+        return false;
     }
-    
-    const formData = new FormData(form);
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
-        }
-    })
-    .then(res => res.json())
-    .then(data => {
-        if(data.success) {
-            window.location.href = data.redirect;
-        } else {
-            alert(data.message || 'حدث خطأ');
-        }
-    });
+    // If confirmed, allow normal form submission (no preventDefault)
 });
 
 updateProgress();

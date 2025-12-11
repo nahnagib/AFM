@@ -11,6 +11,7 @@ use App\Http\Controllers\QA\QAFormsController;
 use App\Http\Controllers\QA\QAFormBuilderController;
 use App\Http\Controllers\QA\QAReportsController;
 use App\Http\Controllers\QA\QARemindersController;
+use App\Http\Controllers\QA\QAStaffController;
 use App\Http\Controllers\Admin\AdminConfigController;
 use App\Http\Controllers\Admin\AdminAuditController;
 
@@ -40,61 +41,29 @@ use App\Http\Controllers\Admin\AdminAuditController;
 // ==========================================
 // DEV-ONLY LOGIN SHORTCUTS (Local Environment Only)
 // ==========================================
+// ==========================================
+// DEV-ONLY: SIMULATOR (Local Environment Only)
+// ==========================================
 if (app()->environment('local')) {
+    Route::get('/dev/simulator', [\App\Http\Controllers\DevSimulatorController::class, 'index'])->name('dev.simulator');
+    Route::post('/dev/simulator/login', [\App\Http\Controllers\DevSimulatorController::class, 'login'])->name('dev.simulator.login');
     
-    // DEV: Student Login
-    Route::get('/dev/login/student', function () {
-        // Simulate AFM session for student "Nahla" (ID: 4401)
-        Session::put([
-            'afm_token_id' => 'dev-token-student-' . time(),
-            'afm_role' => 'student',
-            'afm_user_id' => '4401',
-            'afm_user_name' => 'Nahla Burweiss',
-            'afm_term_code' => '202410',
-            'afm_courses' => [
-                ['course_reg_no' => 'SE401-202410', 'course_code' => 'SE401', 'course_name' => 'Software Engineering Project'],
-                ['course_reg_no' => 'CS301-202410', 'course_code' => 'CS301', 'course_name' => 'Database Systems'],
-                ['course_reg_no' => 'IT201-202410', 'course_code' => 'IT201', 'course_name' => 'Web Development'],
-            ],
-        ]);
-        
-        return redirect()->route('student.dashboard')->with('success', 'Logged in as Student (DEV MODE)');
-    })->name('dev.login.student');
-    
-    // DEV: QA Officer Login
-    Route::get('/dev/login/qa', function () {
-        // Simulate AFM session for QA officer
-        Session::put([
-            'afm_token_id' => 'dev-token-qa-' . time(),
-            'afm_role' => 'qa_officer',
-            'afm_user_id' => 'qa001',
-            'afm_user_name' => 'Dr. Ahmed QA Officer',
-            'afm_term_code' => '202410',
-        ]);
-        
-        return redirect()->route('qa.overview')->with('success', 'Logged in as QA Officer (DEV MODE)');
-    })->name('dev.login.qa');
-    
-    // DEV: Admin Login
-    Route::get('/dev/login/admin', function () {
-        // Simulate AFM session for admin
-        Session::put([
-            'afm_token_id' => 'dev-token-admin-' . time(),
-            'afm_role' => 'admin',
-            'afm_user_id' => 'admin001',
-            'afm_user_name' => 'System Administrator',
-            'afm_term_code' => '202410',
-        ]);
-        
-        return redirect()->route('admin.config.index')->with('success', 'Logged in as Admin (DEV MODE)');
-    })->name('dev.login.admin');
-    
-    // DEV: Logout
+    // Legacy/Convenience Redirect for old dev usage
+    Route::get('/dev/login/student', function() {
+        return redirect()->route('dev.simulator')->with('info', 'Please use the new Simulator to login.');
+    });
+
     Route::get('/dev/logout', function () {
-        // Clear all AFM session keys
-        Session::forget(['afm_token_id', 'afm_role', 'afm_user_id', 'afm_user_name', 'afm_term_code', 'afm_courses']);
-        
-        return redirect('/afm')->with('success', 'Logged out successfully (DEV MODE)');
+        // Clear all AFM-related session keys
+        Session::forget([
+            'afm_role',
+            'afm_user_id',
+            'afm_user_name',
+            'afm_term_code',
+            'afm_courses',
+        ]);
+
+        return redirect()->route('dev.simulator');
     })->name('dev.logout');
 }
 
@@ -102,39 +71,39 @@ if (app()->environment('local')) {
 // AFM LANDING PAGE
 // ==========================================
 Route::get('/afm', function () {
-    // Check if user is authenticated
-    if (Session::has('afm_token_id') && Session::has('afm_role')) {
-        $role = Session::get('afm_role');
-        
-        // Redirect based on role
-        return match($role) {
-            'student' => redirect()->route('student.dashboard'),
-            'qa_officer' => redirect()->route('qa.overview'),
-            'admin' => redirect()->route('admin.config.index'),
-            default => redirect('/')->with('error', 'Unknown role'),
-        };
+    $role = Session::get('afm_role');
+
+    if ($role === 'student') {
+        return redirect('/student/dashboard');
     }
-    
-    // Not authenticated
-    if (app()->environment('local')) {
-        // Show dev login links on local environment
-        return view('afm.dev-landing');
+
+    if ($role === 'qa' || $role === 'qa_officer') {
+        return redirect('/qa');
     }
-    
-    // Production: redirect to SSO or show message
-    return redirect()->route('sso.intake');
+
+    if ($role === 'admin') {
+        return redirect('/admin');
+    }
+
+    return redirect('/dev/simulator');
 })->name('afm.landing');
 
 // ==========================================
-// SSO ENTRY POINTS (Production)
+// SSO ENTRY POINTS (Production / Integration)
 // ==========================================
+// JSON Intake (New Standard)
+Route::post('/sso/json-intake', [\App\Http\Controllers\SsoJsonIntakeController::class, 'store'])->name('sso.json_intake');
+
+// Legacy Handshake (Keep if needed for transition or remove if fully replaced)
 Route::get('/sso/intake', [SsoHandshakeController::class, 'intake'])->name('sso.intake');
 Route::get('/sso/handshake/{tokenId}', [SsoHandshakeController::class, 'handshake'])->name('sso.handshake');
+
+
 
 // ==========================================
 // STUDENT ROUTES (Protected by AFM Auth + Student Role)
 // ==========================================
-Route::middleware(['afm.auth', 'role:student'])->prefix('student')->name('student.')->group(function () {
+Route::middleware(['web', 'afm.student'])->prefix('student')->name('student.')->group(function () {
     Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('dashboard');
     Route::get('/form/{formId}', [StudentFormController::class, 'show'])->name('form.show');
     Route::post('/response/{responseId}/draft', [StudentSubmissionController::class, 'saveDraft'])->name('response.draft');
@@ -144,7 +113,7 @@ Route::middleware(['afm.auth', 'role:student'])->prefix('student')->name('studen
 // ==========================================
 // QA ROUTES (Protected by AFM Auth + QA Officer Role)
 // ==========================================
-Route::middleware(['afm.auth', 'role:qa_officer'])->prefix('qa')->name('qa.')->group(function () {
+Route::middleware(['web', \App\Http\Middleware\EnsureAfmQaRole::class])->prefix('qa')->name('qa.')->group(function () {
     // Overview
     Route::get('/', [QAOverviewController::class, 'index'])->name('overview');
     
@@ -171,10 +140,17 @@ Route::middleware(['afm.auth', 'role:qa_officer'])->prefix('qa')->name('qa.')->g
     Route::get('/reports/students', [QAReportsController::class, 'studentReport'])->name('reports.students');
     Route::get('/reports/non-completers', [QAReportsController::class, 'nonCompleters'])->name('reports.non_completers');
     Route::get('/reports/analysis/{formId}', [QAReportsController::class, 'responseAnalysis'])->name('reports.analysis');
+    Route::get('/reports/responses', [\App\Http\Controllers\QA\QAResponsesReportController::class, 'index'])->name('reports.responses');
     
     // Reminders
     Route::get('/reminders', [QARemindersController::class, 'index'])->name('reminders.index');
     Route::post('/reminders/send', [QARemindersController::class, 'send'])->name('reminders.send');
+
+    // Staff Management
+    Route::get('/staff', [QAStaffController::class, 'index'])->name('staff.index');
+    Route::post('/staff', [QAStaffController::class, 'store'])->name('staff.store');
+    Route::put('/staff/{id}', [QAStaffController::class, 'update'])->name('staff.update');
+    Route::post('/staff/{id}/toggle', [QAStaffController::class, 'toggle'])->name('staff.toggle');
 });
 
 // ==========================================
@@ -192,5 +168,5 @@ Route::middleware(['afm.auth', 'role:admin'])->prefix('admin')->name('admin.')->
 // PUBLIC/LANDING
 // ==========================================
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/afm');
 });

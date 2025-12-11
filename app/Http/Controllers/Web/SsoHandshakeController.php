@@ -31,6 +31,20 @@ class SsoHandshakeController extends Controller
         Session::put('afm_token_id', $token->id);
         Session::put('afm_role', $token->role);
 
+        // Store student-specific data in session for student role
+        if ($token->role === 'student') {
+            Session::put('afm_user_id', $token->sis_student_id);
+            Session::put('afm_user_name', $token->student_name ?? 'Student');
+            Session::put('afm_courses', $token->courses_json ?? []);
+            
+            // Extract term code from courses (assuming all courses have same term)
+            $termCode = 'Spring 2025'; // Default
+            if (!empty($token->courses_json) && isset($token->courses_json[0]['term_code'])) {
+                $termCode = $token->courses_json[0]['term_code'];
+            }
+            Session::put('afm_term_code', $termCode);
+        }
+
         // Redirect based on role
         if ($token->role === 'student') {
             return redirect('/student/dashboard');
