@@ -13,12 +13,12 @@
                     <div class="hidden md:flex space-x-1">
                         @if(session('afm_role') === 'student')
                             <a href="{{ route('student.dashboard') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('student.dashboard') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">Dashboard</a>
-                        @elseif(session('afm_role') === 'qa_officer')
+                        @elseif(in_array(session('afm_role'), ['qa', 'qa_officer']))
                             <a href="{{ route('qa.overview') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('qa.overview') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">Overview</a>
                             <a href="{{ route('qa.forms.index') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('qa.forms.*') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">Forms</a>
                             <a href="{{ route('qa.reports.completion') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('qa.reports.*') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">Reports</a>
                             <a href="{{ route('qa.reminders.index') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('qa.reminders.*') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">Reminders</a>
-                            <a href="{{ route('qa.staff.index') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('qa.staff.*') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">الإعدادات</a>
+                            <a href="{{ route('qa.staff.index') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('qa.staff.*') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">Staff</a>
                         @elseif(session('afm_role') === 'admin')
                             <a href="{{ route('admin.config.index') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('admin.config.*') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">Settings</a>
                             <a href="{{ route('admin.audit.index') }}" class="hover:bg-slate-800 px-3 py-2 rounded-md text-sm font-medium transition {{ request()->routeIs('admin.audit.*') ? 'bg-slate-800 text-blue-400' : 'text-slate-300' }}">Audit Log</a>
@@ -34,9 +34,10 @@
                             <div class="text-sm font-medium text-white">{{ session('afm_user_name') }}</div>
                             @if(session('afm_role'))
                                 <div class="text-xs text-slate-400 uppercase tracking-wider">
-                                    @if(session('afm_role') === 'student') Student
-                                    @elseif(session('afm_role') === 'qa_officer') QA Officer
-                                    @elseif(session('afm_role') === 'admin') Administrator
+                                    @php $roleLabel = session('afm_role'); @endphp
+                                    @if($roleLabel === 'student') Student
+                                    @elseif(in_array($roleLabel, ['qa', 'qa_officer'])) QA Officer
+                                    @elseif($roleLabel === 'admin') Administrator
                                     @endif
                                 </div>
                             @endif

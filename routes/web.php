@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Session;
-use App\Http\Controllers\Web\SsoHandshakeController;
 use App\Http\Controllers\Student\StudentDashboardController;
 use App\Http\Controllers\Student\StudentFormController;
 use App\Http\Controllers\Student\StudentSubmissionController;
@@ -94,9 +93,7 @@ Route::get('/afm', function () {
 // JSON Intake (New Standard)
 Route::post('/sso/json-intake', [\App\Http\Controllers\SsoJsonIntakeController::class, 'store'])->name('sso.json_intake');
 
-// Legacy Handshake (Keep if needed for transition or remove if fully replaced)
-Route::get('/sso/intake', [SsoHandshakeController::class, 'intake'])->name('sso.intake');
-Route::get('/sso/handshake/{tokenId}', [SsoHandshakeController::class, 'handshake'])->name('sso.handshake');
+
 
 
 

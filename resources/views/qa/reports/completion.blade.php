@@ -24,12 +24,19 @@
 
     <!-- Tabs -->
     <div class="mb-6 border-b border-slate-200">
+        @php
+            $tabBase = 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm';
+            $inactiveTab = 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300';
+        @endphp
         <nav class="-mb-px flex space-x-8">
-            <a href="{{ route('qa.reports.completion') }}" class="border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+            <a href="{{ route('qa.reports.completion') }}" class="{{ request()->routeIs('qa.reports.completion') ? 'border-blue-500 text-blue-600' : $inactiveTab }} {{ $tabBase }}">
                 Course-Level Report
             </a>
-            <a href="{{ route('qa.reports.students') }}" class="border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+            <a href="{{ route('qa.reports.students') }}" class="{{ request()->routeIs('qa.reports.students') ? 'border-blue-500 text-blue-600' : $inactiveTab }} {{ $tabBase }}">
                 Student-Level Report
+            </a>
+            <a href="{{ route('qa.reports.responses') }}" class="{{ request()->routeIs('qa.reports.responses') ? 'border-blue-500 text-blue-600' : $inactiveTab }} {{ $tabBase }}">
+                Responses Level
             </a>
         </nav>
     </div>

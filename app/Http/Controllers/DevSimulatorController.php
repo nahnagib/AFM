@@ -11,6 +11,15 @@ class DevSimulatorController extends Controller
 {
     public function index()
     {
+        // -------------------------------------------------------------------------
+        // AFM PROTOTYPE SIMULATOR
+        // -------------------------------------------------------------------------
+        // This controller simulates the role of the University Student Information System (SIS).
+        // It generates a JSON payload, canonicalizes it, signs it with a shared secret,
+        // and sends it to AFM's intake endpoint.
+        
+        $secret = config('afm_sso.shared_secret');
+        
         // 7 Student Payloads
         $students = [
             [
@@ -49,7 +58,7 @@ class DevSimulatorController extends Controller
         $payloads = [];
 
         foreach ($students as $s) {
-            $payloads[] = [
+            $rawPayload = [
                 "iss"          => "LIMU-SIS",
                 "aud"          => "AFM",
                 "v"            => "1",
@@ -59,29 +68,55 @@ class DevSimulatorController extends Controller
                 "student_Name" => $s['name'],
                 "term"         => "Spring 2025",
                 "courses"      => $s['courses'],
+                // Hardcoded times for stable demo or dynamic? Dynamic is better for testing expiry
                 "issued_at"    => now()->toIso8601String(),
                 "expires_at"   => now()->addMinutes(15)->toIso8601String(),
                 "nonce"        => Str::random(12),
-                "sig_alg"      => "HMAC-SHA256",
-                "signature"    => "DEV_SIGNATURE_STUDENT_" . $s['id']
+                "sig_alg"      => "HMAC-SHA256"
             ];
+
+            // 1. Canonicalize (Sort keys, remove whitespace)
+            $canonicalString = \App\Support\AfmJsonCanonicalizer::canonicalize($rawPayload);
+
+            // 2. Sign (HMAC-SHA256)
+            $signature = hash_hmac('sha256', $canonicalString, $secret);
+
+            // 3. Attach Signature
+            $rawPayload['signature'] = $signature;
+            $payloads[] = $rawPayload;
         }
 
         // QA Payload
-        $payloads[] = [
+        $qaPayload = [
             "iss"        => "LIMU-SIS",
             "aud"        => "AFM",
             "v"          => "1",
             "request_id" => Str::uuid()->toString(),
-            "role"       => "qa",
+            "role"       => "qa_officer", // Must match 'allowed_roles' config
             "user_id"    => "U9021",
             "user_name"  => "Dr. Ahmed QA",
             "issued_at"  => now()->toIso8601String(),
             "expires_at" => now()->addMinutes(15)->toIso8601String(),
             "nonce"      => Str::random(12),
-            "sig_alg"    => "HMAC-SHA256",
-            "signature"  => "DEV_SIGNATURE_QA"
+            "sig_alg"    => "HMAC-SHA256"
         ];
+        
+        $qaCanonical = \App\Support\AfmJsonCanonicalizer::canonicalize($qaPayload);
+        $qaPayload['signature'] = hash_hmac('sha256', $qaCanonical, $secret);
+        $payloads[] = $qaPayload;
+
+        /*
+         * EDUCATIONAL EXAMPLE:
+         * ---------------------------------------------------------
+         * If the payload is: {"aud":"AFM","iss":"LIMU-SIS"}
+         * And the secret is: "secret"
+         * 
+         * 1. Canonical String: {"aud":"AFM","iss":"LIMU-SIS"}
+         * 2. HMAC-SHA256: 7f63b0... (hex)
+         * 
+         * This ensures that even if 'iss' came first in the source array,
+         * the signature is always computed against the sorted keys.
+         */
 
         return view('dev.simulator', ['payloads' => $payloads]);
     }

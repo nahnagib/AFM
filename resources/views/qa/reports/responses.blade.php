@@ -4,7 +4,27 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold text-slate-800 mb-6">Detailed Responses Report</h1>
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold text-slate-800">Responses Level Report</h1>
+    </div>
+
+    <div class="mb-6 border-b border-slate-200">
+        @php
+            $tabBase = 'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm';
+            $inactiveTab = 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300';
+        @endphp
+        <nav class="-mb-px flex space-x-8">
+            <a href="{{ route('qa.reports.completion') }}" class="{{ request()->routeIs('qa.reports.completion') ? 'border-blue-500 text-blue-600' : $inactiveTab }} {{ $tabBase }}">
+                Course-Level Report
+            </a>
+            <a href="{{ route('qa.reports.students') }}" class="{{ request()->routeIs('qa.reports.students') ? 'border-blue-500 text-blue-600' : $inactiveTab }} {{ $tabBase }}">
+                Student-Level Report
+            </a>
+            <a href="{{ route('qa.reports.responses') }}" class="{{ request()->routeIs('qa.reports.responses') ? 'border-blue-500 text-blue-600' : $inactiveTab }} {{ $tabBase }}">
+                Responses Level
+            </a>
+        </nav>
+    </div>
 
     @if(session('error'))
         <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">

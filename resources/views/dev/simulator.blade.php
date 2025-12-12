@@ -20,15 +20,28 @@
             @foreach($payloads as $index => $payload)
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <div class="flex justify-between items-start mb-4">
+                        @php
+                            $role = $payload['role'] ?? 'student';
+                            $isStudent = $role === 'student';
+                            $badgeClasses = $isStudent
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800';
+                            $displayName = $isStudent
+                                ? ($payload['student_Name'] ?? 'Student')
+                                : ($payload['user_name'] ?? 'User');
+                            $displayId = $isStudent
+                                ? ($payload['student_id'] ?? 'N/A')
+                                : ($payload['user_id'] ?? 'N/A');
+                        @endphp
                         <div>
                             <span class="inline-block px-2 py-1 text-sm font-semibold rounded 
-                                {{ $payload['role'] === 'qa' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
-                                {{ strtoupper($payload['role']) }}
+                                {{ $badgeClasses }}">
+                                {{ strtoupper($role) }}
                             </span>
                             <h2 class="text-xl font-bold mt-2">
-                                {{ $payload['role'] === 'qa' ? ($payload['user_name'] ?? 'QA') : ($payload['student_Name'] ?? 'Student') }}
+                                {{ $displayName }}
                             </h2>
-                            <p class="text-sm text-gray-600">ID: {{ $payload['role'] === 'qa' ? $payload['user_id'] : $payload['student_id'] }}</p>
+                            <p class="text-sm text-gray-600">ID: {{ $displayId }}</p>
                         </div>
                         <form action="{{ route('dev.simulator.login') }}" method="POST">
                             @csrf

@@ -78,10 +78,10 @@ class SsoJsonIntakeService
             return '/student/dashboard';
         } 
 
-        if ($role === 'qa') {
+        if (in_array($role, ['qa', 'qa_officer'], true)) {
             $this->validateQaPayload($payload);
 
-            Session::put('afm_role', 'qa');
+            Session::put('afm_role', $role);
             Session::put('afm_user_id', $payload['user_id']);
             Session::put('afm_user_name', $payload['user_name'] ?? 'QA User');
 
