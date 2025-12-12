@@ -4,11 +4,17 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
     public function up(): void
     {
+        // Skip entirely on PostgreSQL deployments
+        if (DB::getDriverName() === 'pgsql') {
+            return;
+        }
+
         $constraints = [
             'form_sections_old' => ['form_sections_form_id_foreign'],
             'questions_old' => ['questions_section_id_foreign'],
